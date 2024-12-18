@@ -14,6 +14,12 @@ USpellCaster::USpellCaster()
 	// ...
 }
 
+/// <summary>
+/// find out which template the points best match
+/// </summary>
+/// <param name="points">the points u want to find the most matching template for</param>
+/// <param name="score">the score of how much it looks like the template</param>
+/// <param name="templateIndex">the index of the template it looks like</param>
 void USpellCaster::Recognize(TArray<FVector2D> points, double& score, int& templateIndex)
 {
 	TArray<FVector2D> resampledPoints = Resample(points,32);
@@ -33,6 +39,10 @@ void USpellCaster::Recognize(TArray<FVector2D> points, double& score, int& templ
 	return;
 }
 
+/// <summary>
+/// 
+/// </summary>
+/// <param name="points"></param>
 void USpellCaster::AddTemplate(TArray<FVector2D> points)
 {
 	TArray<FVector2D> newTemplate = Resample(points, 32);
@@ -40,14 +50,14 @@ void USpellCaster::AddTemplate(TArray<FVector2D> points)
 }
 
 /// <summary>
-/// 
+/// find the diference between two list of points and find the angle where the score is best and gives you that score back
 /// </summary>
-/// <param name="points"></param>
-/// <param name="streokTemplate"></param>
-/// <param name="fromAngle"></param>
-/// <param name="toAngle"></param>
-/// <param name="threshold"></param>
-/// <returns></returns>
+/// <param name="points">points to compare to a template</param>
+/// <param name="streokTemplate">the template to compare too</param>
+/// <param name="fromAngle">the minimum angle to check for</param>
+/// <param name="toAngle">the maximum angle to check for</param>
+/// <param name="threshold">how close to search for before chsing the score</param>
+/// <returns>the distance between the point and the template</returns>
 double USpellCaster::DistanceAtBestAngle(TArray<FVector2D> points, TArray<FVector2D> strokeTemplate, double fromAngle, double toAngle, double threshold)
 {
 	//needs to find the score here
@@ -83,7 +93,6 @@ double USpellCaster::DistanceAtBestAngle(TArray<FVector2D> points, TArray<FVecto
 void USpellCaster::BeginPlay()
 {
 	Super::BeginPlay();
-
 	// ...
 	
 }
@@ -127,12 +136,23 @@ TArray<FVector2D> USpellCaster::Resample(TArray<FVector2D> points, int resampled
 	return newPoints;
 }
 
+/// <summary>
+/// 
+/// </summary>
+/// <param name="points"></param>
+/// <returns></returns>
 double USpellCaster::IndicativeAngle(TArray<FVector2D> points)
 {
 	FVector2D centroid = FindCentroid(points);
 	return atan2(centroid.Y - points[0].Y, centroid.X - points[0].X);
 }
 
+/// <summary>
+/// 
+/// </summary>
+/// <param name="points"></param>
+/// <param name="radians"></param>
+/// <returns></returns>
 TArray<FVector2D> USpellCaster::Rotate(TArray<FVector2D> points, double radians)
 {
 	FVector2D centroid = FindCentroid(points);
@@ -148,6 +168,12 @@ TArray<FVector2D> USpellCaster::Rotate(TArray<FVector2D> points, double radians)
 	return newPoints;
 }
 
+/// <summary>
+/// 
+/// </summary>
+/// <param name="points"></param>
+/// <param name="newSize"></param>
+/// <returns></returns>
 TArray<FVector2D> USpellCaster::Scale(TArray<FVector2D> points, double newSize)
 {
 	FVector2D boundingBoxPositive;
@@ -179,6 +205,12 @@ TArray<FVector2D> USpellCaster::Scale(TArray<FVector2D> points, double newSize)
 	return newPoints;
 }
 
+/// <summary>
+/// 
+/// </summary>
+/// <param name="points"></param>
+/// <param name="toPoint"></param>
+/// <returns></returns>
 TArray<FVector2D> USpellCaster::Translate(TArray<FVector2D> points, FVector2D toPoint)
 {
 	FVector2D centroid = FindCentroid(points);
@@ -192,6 +224,11 @@ TArray<FVector2D> USpellCaster::Translate(TArray<FVector2D> points, FVector2D to
 	return newPoints;
 }
 
+/// <summary>
+/// 
+/// </summary>
+/// <param name="points"></param>
+/// <returns></returns>
 FVector2D USpellCaster::FindCentroid(TArray<FVector2D> points)
 {
 	FVector2D sum;
@@ -203,6 +240,13 @@ FVector2D USpellCaster::FindCentroid(TArray<FVector2D> points)
 	return centroid;
 }
 
+/// <summary>
+/// 
+/// </summary>
+/// <param name="samples"></param>
+/// <param name="theTemplate"></param>
+/// <param name="theta"></param>
+/// <returns></returns>
 double USpellCaster::DistanceAtAngle(TArray<FVector2D> samples, TArray<FVector2D> theTemplate, float theta)
 {
 	int maxPoints = 128;
@@ -215,6 +259,12 @@ double USpellCaster::DistanceAtAngle(TArray<FVector2D> samples, TArray<FVector2D
 	return PathDistance(newPoints, theTemplate);
 }
 
+/// <summary>
+/// 
+/// </summary>
+/// <param name="points1"></param>
+/// <param name="points2"></param>
+/// <returns></returns>
 double USpellCaster::PathDistance(TArray<FVector2D> points1, TArray<FVector2D> points2)
 {
 	double d = 0;
