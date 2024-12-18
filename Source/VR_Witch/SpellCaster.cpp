@@ -22,7 +22,20 @@ USpellCaster::USpellCaster()
 /// <param name="templateIndex">the index of the template it looks like</param>
 void USpellCaster::Recognize(TArray<FVector2D> points, double& score, int& templateIndex)
 {
+	if (templates.Num() == 0) {
+		throw "no templates to check";
+	}
+	if (points.Num() < 32)
+	{
+		throw "points needs at least 32 points";
+	}
+	
 	TArray<FVector2D> resampledPoints = Resample(points,32);
+	double radians = IndicativeAngle(resampledPoints);
+	resampledPoints = Rotate(resampledPoints, radians);
+	resampledPoints = Scale(resampledPoints, 250);
+	resampledPoints = Translate(resampledPoints, FVector2D(0, 0));
+
 	int bestTemplateIndex = 0;
 	double best = INFINITY;
 	for (size_t i = 0; i < templates.Num(); i++)
@@ -46,6 +59,10 @@ void USpellCaster::Recognize(TArray<FVector2D> points, double& score, int& templ
 void USpellCaster::AddTemplate(TArray<FVector2D> points)
 {
 	TArray<FVector2D> newTemplate = Resample(points, 32);
+	double radians = IndicativeAngle(newTemplate);
+	newTemplate = Rotate(newTemplate, radians);
+	newTemplate = Scale(newTemplate, 250);
+	newTemplate = Translate(newTemplate, FVector2D(0, 0));
 	templates.Add(newTemplate);
 }
 
