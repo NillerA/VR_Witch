@@ -2,6 +2,7 @@
 
 
 #include "SpellCaster.h"
+#include "Engine/Engine.h"
 #define phi 1.61803398874989484820458683436563811772030917980576286213544862270526046281890244970720720418939113748475408807538689175212663386222353693179318006076672635443338908659593958290563832266131992829026788067520876689250171169620703222104321626954862629631361443814975870122034080588795445474924618569536486444924104432077134494704956584678850987433944221254487706647809158846074998871240076521705751797883416625624940758906970400028121042762177111777805315317141011704666
 
 // Sets default values for this component's properties
@@ -14,6 +15,38 @@ USpellCaster::USpellCaster()
 	// ...
 }
 
+TArray<FVector2D> USpellCaster::ProjectPointsTo2D(TArray<FVector> Points)
+{
+	// Calculate the least variation axis
+	FVector LeastVariationAxis = CalculateLeastVariationAxis(Points);
+
+	// Find the two other axes perpendicular to the least variation axis
+	FVector AxisA = FVector::CrossProduct(LeastVariationAxis, FVector(1, 0, 0));
+	if (AxisA.IsZero())
+	{
+		AxisA = FVector::CrossProduct(LeastVariationAxis, FVector(0, 1, 0));
+	}
+	AxisA.Normalize();
+
+	FVector AxisB = FVector::CrossProduct(LeastVariationAxis, AxisA);
+	AxisB.Normalize();
+
+	TArray<FVector2D> ProjectedPoints;
+
+	// Project each 3D point onto the 2D plane defined by AxisA and AxisB
+	for (const FVector& Point : Points)
+	{
+		// Calculate the 2D projection
+		FVector2D ProjectedPoint;
+		ProjectedPoint.X = FVector::DotProduct(Point, AxisA);
+		ProjectedPoint.Y = FVector::DotProduct(Point, AxisB);
+
+		ProjectedPoints.Add(ProjectedPoint);
+	}
+
+	return ProjectedPoints;
+}
+
 /// <summary>
 /// find out which template the points best match
 /// </summary>
@@ -22,13 +55,13 @@ USpellCaster::USpellCaster()
 /// <param name="templateIndex">the index of the template it looks like</param>
 void USpellCaster::Recognize(TArray<FVector2D> points, double& score, int& templateIndex)
 {
-	if (templates.Num() == 0) {
+	/*if (templates.Num() == 0) {
 		throw "no templates to check";
 	}
 	if (points.Num() < 32)
 	{
 		throw "points needs at least 32 points";
-	}
+	}*/
 	
 	TArray<FVector2D> resampledPoints = Resample(points,32);
 	double radians = IndicativeAngle(resampledPoints);
@@ -58,12 +91,62 @@ void USpellCaster::Recognize(TArray<FVector2D> points, double& score, int& templ
 /// <param name="points"></param>
 void USpellCaster::AddTemplate(TArray<FVector2D> points)
 {
+	if (points.Num() < 32)
+	{
+		throw "points needs at least 32 points";
+	}
 	TArray<FVector2D> newTemplate = Resample(points, 32);
 	double radians = IndicativeAngle(newTemplate);
 	newTemplate = Rotate(newTemplate, radians);
 	newTemplate = Scale(newTemplate, 250);
 	newTemplate = Translate(newTemplate, FVector2D(0, 0));
 	templates.Add(newTemplate);
+}
+
+FVector USpellCaster::CalculateLeastVariationAxis(TArray<FVector> Points)
+{
+	FVector MeanPoint(0.f, 0.f, 0.f);
+	int32 NumPoints = Points.Num();
+
+	// Calculate the mean point (center of mass)
+	for (const FVector& Point : Points)
+	{
+		MeanPoint += Point;
+	}
+	MeanPoint /= NumPoints;
+
+	// Compute the covariance matrix (simplified approach)
+	FVector CovX(0.f, 0.f, 0.f);
+	FVector CovY(0.f, 0.f, 0.f);
+	FVector CovZ(0.f, 0.f, 0.f);
+
+	// Calculate the covariance vectors
+	for (const FVector& Point : Points)
+	{
+		FVector Diff = Point - MeanPoint;
+		CovX += FVector(Diff.X * Diff.X, Diff.Y * Diff.X, Diff.Z * Diff.X);
+		CovY += FVector(Diff.X * Diff.Y, Diff.Y * Diff.Y, Diff.Z * Diff.Y);
+		CovZ += FVector(Diff.X * Diff.Z, Diff.Y * Diff.Z, Diff.Z * Diff.Z);
+	}
+
+	// Find which axis has the least variation (the smallest covariance)
+	FVector Covariance = CovX + CovY + CovZ;
+
+	FVector LeastVariationAxis;
+	if (Covariance.X < Covariance.Y && Covariance.X < Covariance.Z)
+	{
+		LeastVariationAxis = FVector(1, 0, 0);  // X-axis has least variation
+	}
+	else if (Covariance.Y < Covariance.Z)
+	{
+		LeastVariationAxis = FVector(0, 1, 0);  // Y-axis has least variation
+	}
+	else
+	{
+		LeastVariationAxis = FVector(0, 0, 1);  // Z-axis has least variation
+	}
+
+	return LeastVariationAxis;
 }
 
 /// <summary>

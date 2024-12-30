@@ -17,6 +17,8 @@ public:
 	USpellCaster();
 	TArray<TArray<FVector2D>> templates;
 	UFUNCTION(BlueprintCallable, Category = "Spell Casting")
+	TArray<FVector2D> ProjectPointsTo2D(TArray<FVector> Points);
+	UFUNCTION(BlueprintCallable, Category = "Spell Casting")
 	void Recognize(TArray<FVector2D> points, double& score, int& templateIndex);
 	UFUNCTION(BlueprintCallable, Category = "Spell Casting")
 	void AddTemplate(TArray<FVector2D> points);
@@ -24,6 +26,7 @@ public:
 protected:
 	// Called when the game starts
 	virtual void BeginPlay() override;
+	FVector CalculateLeastVariationAxis(TArray<FVector> Points);
 	TArray<FVector2D> Resample(TArray<FVector2D> points,int resampledPointAmount);
 	double IndicativeAngle(TArray<FVector2D> points);
 	TArray<FVector2D> Rotate(TArray<FVector2D> points, double radians);
